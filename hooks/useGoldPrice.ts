@@ -1,3 +1,4 @@
+// hooks/useGoldPrice.ts
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/services/api';
@@ -12,4 +13,3 @@ export function useGoldPrice() {
     staleTime: 55_000,
   });
 }
-

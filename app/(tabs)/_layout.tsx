@@ -1,41 +1,44 @@
+// app/(tabs)/_layout.tsx
 import React from 'react';
-import { SymbolView } from 'expo-symbols';
 import { Tabs } from 'expo-router';
-import { I18nManager } from 'react-native';
-
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { I18nManager, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '@/constants/theme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
-  const isRTL = I18nManager.isRTL;
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-        headerShown: useClientOnlyValue(false, true),
-        tabBarLabelStyle: {
-          fontSize: 12,
+        headerShown: false,
+        tabBarActiveTintColor:   Colors.goldLight,
+        tabBarInactiveTintColor: Colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          position: 'absolute',
+          elevation: 0,
         },
-      }}>
-      {/* In RTL, rightmost tab is first, so we define order as [home, catalog, gold] */}
+        tabBarBackground: () => (
+          <LinearGradient
+            colors={['transparent', 'rgba(11,11,18,0.97)']}
+            style={StyleSheet.absoluteFill}
+          />
+        ),
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '700',
+          marginTop: 2,
+        },
+        tabBarItemStyle: { paddingTop: 8 },
+        tabBarHideOnKeyboard: true,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'الرئيسية',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'house',
-                android: 'home',
-                web: 'house',
-              }}
-              tintColor={color}
-              size={24}
-            />
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon emoji="🏠" color={color} size={size} active={color === Colors.goldLight} />
           ),
         }}
       />
@@ -43,16 +46,8 @@ export default function TabLayout() {
         name="catalog"
         options={{
           title: 'المنتجات',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'square.grid.2x2',
-                android: 'grid_view',
-                web: 'square.grid.2x2',
-              }}
-              tintColor={color}
-              size={24}
-            />
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon emoji="💍" color={color} size={size} active={color === Colors.goldLight} />
           ),
         }}
       />
@@ -60,21 +55,21 @@ export default function TabLayout() {
         name="gold-prices"
         options={{
           title: 'أسعار الذهب',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chart.line.uptrend.xyaxis',
-                android: 'show_chart',
-                web: 'chart.line.uptrend.xyaxis',
-              }}
-              tintColor={color}
-              size={24}
-              style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-            />
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon emoji="📈" color={color} size={size} active={color === Colors.goldLight} />
           ),
         }}
       />
+
     </Tabs>
   );
 }
 
+import { Text, View } from 'react-native';
+function TabIcon({ emoji, active }: { emoji: string; color: string; size: number; active: boolean }) {
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', opacity: active ? 1 : 0.5 }}>
+      <Text style={{ fontSize: 20 }}>{emoji}</Text>
+    </View>
+  );
+}
