@@ -5,8 +5,7 @@ import type { GoldPrice, Product } from '@/types';
 export const BASE_URL: string =
   process.env.EXPO_PUBLIC_API_URL ??
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-  'http://localhost:3000'; // Fallback for local emulator
-
+  'http://localhost:3000';
 
 async function json<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const res = await fetch(input as RequestInfo, init);
@@ -42,7 +41,8 @@ export const api = {
     list: (params?: string) =>
       json<any[]>(`${BASE_URL}/api/products${params ? `?${params}` : ''}`)
         .then(items => items.map(normaliseProduct)),
-    detail: (id: number | string) =>
+    // IDs are cuid strings — pass as-is, do NOT convert to Number
+    detail: (id: string) =>
       json<any>(`${BASE_URL}/api/products/${id}`).then(normaliseProduct),
   },
   goldPrice: {

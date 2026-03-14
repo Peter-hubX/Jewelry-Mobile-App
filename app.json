@@ -48,7 +48,8 @@
       "apiUrl": "http://localhost:3000",
       "eas": {
         "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
-      }
+      },
+      "whatsappNumber": "201000000000"
     }
   }
 }
