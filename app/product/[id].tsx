@@ -112,7 +112,7 @@ export default function ProductDetailScreen() {
 
       {/* Back button — always on top */}
       <Pressable
-        style={[styles.backBtn, { top: insets.top + Spacing.sm }]}
+        style={[styles.backBtn, { top: insets.top || Spacing.lg, left: Spacing.lg }]}
         onPress={() => router.back()}
         hitSlop={14}
       >
