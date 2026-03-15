@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  ActivityIndicator, ScrollView, Platform,
+  ActivityIndicator, ScrollView, Platform, RefreshControl,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,8 @@ import { Colors, Spacing, Radius, FontSize, Shadow } from '@/constants/theme';
 import { PRODUCT_TYPE_LABELS, PRODUCT_TYPE_ICONS, type ProductType } from '@/types';
 import { AmbientBackground } from '@/components/AmbientBackground';
 import { ProductCard } from '@/components/ProductCard';
+import { SkeletonGrid } from '@/components/SkeletonCard';
+import { hapticLight, hapticSelection } from '@/utils/haptics';
 
 type Sort = 'default' | 'price_asc' | 'price_desc';
 const SORT_LABELS: Record<Sort, string> = {
@@ -31,6 +33,7 @@ export default function CatalogScreen() {
   const [productType, setProductType] = useState<ProductType | undefined>(params.type as any);
   const [sort, setSort] = useState<Sort>('default');
   const [showSort, setShowSort] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fadeIn = useSharedValue(0);
   const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value }));
@@ -60,6 +63,13 @@ export default function CatalogScreen() {
   const clearAll = useCallback(() => {
     setSearch(''); setKarat(undefined); setProductType(undefined); setSort('default');
   }, []);
+
+  const onRefresh = useCallback(async () => {
+    hapticLight();
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  }, [refetch]);
 
   const hasFilter = !!(search || karat || productType || sort !== 'default');
 
@@ -114,7 +124,7 @@ export default function CatalogScreen() {
                 <View key={t} style={{ transform: [{ scaleX: -1 }] }}>
                   <Pressable
                     style={[styles.pill, active && styles.pillOn]}
-                    onPress={() => toggleType(t)}
+                    onPress={() => { hapticSelection(); toggleType(t); }}
                   >
                     <Text style={styles.pillIcon}>{PRODUCT_TYPE_ICONS[t]}</Text>
                     <Text style={[styles.pillText, active && styles.pillTextOn]}>
@@ -135,14 +145,14 @@ export default function CatalogScreen() {
                   <Pressable
                     key={k}
                     style={[styles.chip, active && styles.chipOn]}
-                    onPress={() => toggleKarat(k)}
+                    onPress={() => { hapticSelection(); toggleKarat(k); }}
                   >
                     <Text style={[styles.chipText, active && styles.chipTextOn]}>{k}</Text>
                   </Pressable>
                 );
               })}
             </View>
-            <Pressable style={styles.sortBtn} onPress={() => setShowSort(v => !v)}>
+            <Pressable style={styles.sortBtn} onPress={() => { hapticLight(); setShowSort(v => !v); }}>
               <Text style={styles.sortBtnText}>
                 {sort === 'default' ? '↕ ترتيب' : SORT_LABELS[sort]}
               </Text>
@@ -157,7 +167,7 @@ export default function CatalogScreen() {
               <Pressable
                 key={opt}
                 style={[styles.dropItem, sort === opt && styles.dropItemOn]}
-                onPress={() => { setSort(opt); setShowSort(false); }}
+                onPress={() => { hapticSelection(); setSort(opt); setShowSort(false); }}
               >
                 <Text style={[styles.dropText, sort === opt && styles.dropTextOn]}>
                   {SORT_LABELS[opt]}
@@ -168,12 +178,7 @@ export default function CatalogScreen() {
         )}
 
         {/* Loading */}
-        {isLoading && (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={Colors.gold} />
-            <Text style={styles.centerText}>جاري التحميل...</Text>
-          </View>
-        )}
+        {isLoading && <SkeletonGrid count={6} />}
 
         {/* Error */}
         {isError && !isLoading && (
@@ -203,6 +208,14 @@ export default function CatalogScreen() {
             contentContainerStyle={styles.grid}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={onRefresh}
+                tintColor={Colors.gold}
+                colors={[Colors.gold]}
+              />
+            }
           >
             <View style={styles.gridRow}>
               {sorted.map((p, i) => (

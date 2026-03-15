@@ -16,6 +16,7 @@ import Animated, {
 
 import { useGoldPrice } from '@/hooks/useGoldPrice';
 import { useWishlistContext } from '@/context/WishlistContext';
+import { hapticLight, hapticMedium, hapticSuccess } from '@/utils/haptics';
 import { api, BASE_URL } from '@/services/api';
 import { Colors, Spacing, Radius, FontSize, Shadow, KaratPremiums, DEMO_IMAGES } from '@/constants/theme';
 import {
@@ -72,6 +73,7 @@ export default function ProductDetailScreen() {
 
   function handleStar() {
     if (!product) return;
+    hapticSuccess();
     starScale.value = withSequence(
       withSpring(1.5, { damping: 5, stiffness: 300 }),
       withSpring(1.0, { damping: 10 }),
@@ -95,6 +97,7 @@ export default function ProductDetailScreen() {
 
   async function handleWhatsApp() {
     if (!product) return;
+    hapticMedium();
     const msg = buildProductInquiryMessage({
       nameAr: product.nameAr, karat: product.karat,
       weight: product.weight, price: product.calculatedPrice,
@@ -116,7 +119,7 @@ export default function ProductDetailScreen() {
       {/* Back button */}
       <Pressable
         style={[styles.backBtn, { top: insets.top || Spacing.lg, right: Spacing.lg }]}
-        onPress={() => router.back()}
+        onPress={() => { hapticLight(); router.back(); }}
         hitSlop={14}
       >
         <Text style={styles.backArrow}>←</Text>

@@ -2,8 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ScrollView, View, Text, StyleSheet,
-  Pressable, ActivityIndicator, Dimensions,
-  RefreshControl,
+  Pressable, ActivityIndicator, Dimensions, RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -21,12 +20,14 @@ import {
   Colors, Spacing, Radius, FontSize, Shadow, DEMO_IMAGES,
 } from '@/constants/theme';
 import { AmbientBackground } from '@/components/AmbientBackground';
+import { SkeletonCard } from '@/components/SkeletonCard';
 import { GlassCard } from '@/components/GlassCard';
 import {
   resolveImageUrl, PRODUCT_TYPE_LABELS, PRODUCT_TYPE_ICONS,
   type Product, type ProductType,
 } from '@/types';
 import { BASE_URL } from '@/services/api';
+import { hapticLight } from '@/utils/haptics';
 
 const { width: W } = Dimensions.get('window');
 
@@ -40,10 +41,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { data: products, isLoading, refetch: refetchProducts } = useProducts();
   const { data: gold, refetch: refetchGold } = useGoldPrice();
-
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const onRefresh = useCallback(async () => {
-    // hapticLight(); // Assuming you have expo-haptics
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const onRefresh = React.useCallback(async () => {
+    hapticLight();
     setIsRefreshing(true);
     await Promise.all([refetchProducts(), refetchGold()]);
     setIsRefreshing(false);
@@ -281,7 +281,12 @@ export default function HomeScreen() {
           </View>
 
           {isLoading ? (
-            <ActivityIndicator color={Colors.gold} style={{ marginVertical: Spacing.xl }} />
+            <ScrollView
+              horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.featRow}
+            >
+              {[0,1,2,3].map(i => <SkeletonCard key={i} index={i} />)}
+            </ScrollView>
           ) : (
             <ScrollView
               horizontal showsHorizontalScrollIndicator={false}

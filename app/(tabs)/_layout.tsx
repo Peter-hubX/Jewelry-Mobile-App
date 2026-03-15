@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useWishlistContext } from '@/context/WishlistContext';
 import { Colors } from '@/constants/theme';
+import { hapticLight } from '@/utils/haptics';
 
 // ─── Wishlist heart button ────────────────────────────────────────────────────
 function WishlistHeaderButton() {
@@ -19,7 +20,7 @@ function WishlistHeaderButton() {
   return (
     <Animated.View style={[aStyle, { marginLeft: 16 }]}>
       <Pressable
-        onPress={() => router.push('/wishlist')}
+        onPress={() => { hapticLight(); router.push('/wishlist'); }}
         onPressIn={() => { scale.value = withSpring(0.88); }}
         onPressOut={() => { scale.value = withSpring(1); }}
         style={hdr.btn}

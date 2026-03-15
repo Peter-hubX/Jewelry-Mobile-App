@@ -15,6 +15,7 @@ import {
   type Product, type ProductType,
 } from '@/types';
 import { BASE_URL } from '@/services/api';
+import { hapticLight, hapticSuccess } from '@/utils/haptics';
 import { useWishlistContext } from '@/context/WishlistContext';
 
 const { width: W } = Dimensions.get('window');
@@ -53,6 +54,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     ?? DEMO_IMAGES.ring;
 
   function handleStar() {
+    hapticSuccess();
     starScale.value = withSequence(
       withSpring(1.5, { damping: 5, stiffness: 300 }),
       withSpring(1.0, { damping: 10 }),
@@ -64,7 +66,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     <AnimPressable
       style={[styles.card, wrapStyle]}
       onPress={() => router.push(`/product/${product.id}`)}
-      onPressIn={() => { scale.value = withSpring(0.955, { damping: 18 }); }}
+      onPressIn={() => { hapticLight(); scale.value = withSpring(0.955, { damping: 18 }); }}
       onPressOut={() => { scale.value = withSpring(1.000, { damping: 18 }); }}
     >
       {/* ── Image ── */}

@@ -15,18 +15,18 @@ export function useWishlist() {
       .then(raw => {
         if (raw) setWishlist(JSON.parse(raw));
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoaded(true));
   }, []);
 
   // Persist to storage whenever wishlist changes (after initial load)
   useEffect(() => {
     if (!loaded) return;
-    AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist)).catch(() => {});
+    AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist)).catch(() => { });
   }, [wishlist, loaded]);
 
   const isWishlisted = useCallback(
-    (id: string) => wishlist.some(p => p.id === id),
+    (id: number) => wishlist.some(p => p.id === id),
     [wishlist],
   );
 
@@ -38,7 +38,7 @@ export function useWishlist() {
     );
   }, []);
 
-  const remove = useCallback((id: string) => {
+  const remove = useCallback((id: number) => {
     setWishlist(prev => prev.filter(p => p.id !== id));
   }, []);
 
