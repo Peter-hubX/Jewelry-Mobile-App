@@ -26,21 +26,29 @@ export default function CatalogScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ karat?: string; type?: string }>();
 
-  const [search,      setSearch]      = useState('');
-  const [karat,       setKarat]       = useState<ProductFilters['karat'] | undefined>(params.karat as any);
+  const [search, setSearch] = useState('');
+  const [karat, setKarat] = useState<ProductFilters['karat'] | undefined>(params.karat as any);
   const [productType, setProductType] = useState<ProductType | undefined>(params.type as any);
-  const [sort,        setSort]        = useState<Sort>('default');
-  const [showSort,    setShowSort]    = useState(false);
+  const [sort, setSort] = useState<Sort>('default');
+  const [showSort, setShowSort] = useState(false);
 
   const fadeIn = useSharedValue(0);
-  useEffect(() => { fadeIn.value = withTiming(1, { duration: 460, easing: Easing.out(Easing.quad) }); }, []);
   const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value }));
 
+  useEffect(() => {
+    fadeIn.value = withTiming(1, { duration: 460, easing: Easing.out(Easing.quad) });
+  }, []);
+
+  // Sync filter state when navigating here from homepage tiles
+  useEffect(() => {
+    if (params.karat) setKarat(params.karat as ProductFilters['karat']);
+    if (params.type) setProductType(params.type as ProductType);
+  }, [params.karat, params.type]);
   const { data, isLoading, isError, refetch } = useProducts({ search, karat, productType });
 
   const sorted = useMemo(() => {
     if (!data) return [];
-    if (sort === 'price_asc')  return [...data].sort((a, b) => a.calculatedPrice - b.calculatedPrice);
+    if (sort === 'price_asc') return [...data].sort((a, b) => a.calculatedPrice - b.calculatedPrice);
     if (sort === 'price_desc') return [...data].sort((a, b) => b.calculatedPrice - a.calculatedPrice);
     return data;
   }, [data, sort]);
@@ -66,9 +74,6 @@ export default function CatalogScreen() {
 
           {/* Title row */}
           <View style={styles.titleRow}>
-            <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={14}>
-              <Text style={styles.backArrow}>←</Text>
-            </Pressable>
             <Text style={styles.title}>المنتجات</Text>
             <View style={styles.titleRight}>
               {hasFilter && (
@@ -124,7 +129,7 @@ export default function CatalogScreen() {
           {/* Karat chips + sort */}
           <View style={styles.filterRow}>
             <View style={styles.karatGroup}>
-              {(['24K','21K','18K'] as const).map(k => {
+              {(['24K', '21K', '18K'] as const).map(k => {
                 const active = karat === k;
                 return (
                   <Pressable
@@ -212,7 +217,7 @@ export default function CatalogScreen() {
 }
 
 const styles = StyleSheet.create({
-  root:  { flex: 1, backgroundColor: Colors.bg },
+  root: { flex: 1, backgroundColor: Colors.bg },
   inner: { flex: 1, zIndex: 1 },
 
   header: {
@@ -227,12 +232,6 @@ const styles = StyleSheet.create({
   titleRight: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, minWidth: 60 },
   count: { fontSize: FontSize.sm, color: Colors.textMuted },
   clearBtn: { fontSize: FontSize.sm, color: Colors.goldMid, fontWeight: '700' },
-  backBtn: {
-    width: 36, height: 36, borderRadius: Radius.full,
-    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.glassBorder,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  backArrow: { color: Colors.textPrimary, fontSize: 18, fontWeight: '700', lineHeight: 20 },
 
   searchBar: {
     flexDirection: 'row-reverse', alignItems: 'center',
@@ -240,7 +239,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.glassBorder,
     paddingHorizontal: Spacing.md,
   },
-  searchIcon:  { fontSize: 14, marginLeft: 6 },
+  searchIcon: { fontSize: 14, marginLeft: 6 },
   searchInput: {
     flex: 1,
     paddingVertical: Platform.OS === 'ios' ? 11 : 9,
@@ -254,21 +253,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.glass, borderRadius: Radius.full,
     borderWidth: 1, borderColor: Colors.glassBorder,
   },
-  pillOn:      { backgroundColor: Colors.glassGold, borderColor: Colors.glassGoldBorder },
-  pillIcon:    { fontSize: 13 },
-  pillText:    { fontSize: 12, color: Colors.textSecond, fontWeight: '600' },
-  pillTextOn:  { color: Colors.goldLight },
+  pillOn: { backgroundColor: Colors.glassGold, borderColor: Colors.glassGoldBorder },
+  pillIcon: { fontSize: 13 },
+  pillText: { fontSize: 12, color: Colors.textSecond, fontWeight: '600' },
+  pillTextOn: { color: Colors.goldLight },
 
-  filterRow:   { flexDirection: 'row-reverse', alignItems: 'center', gap: Spacing.sm },
-  karatGroup:  { flexDirection: 'row-reverse', gap: 6, flex: 1 },
+  filterRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: Spacing.sm },
+  karatGroup: { flexDirection: 'row-reverse', gap: 6, flex: 1 },
   chip: {
     paddingHorizontal: Spacing.md, paddingVertical: 7,
     borderRadius: Radius.full, borderWidth: 1.5,
     borderColor: Colors.glassBorder, backgroundColor: Colors.glass,
   },
-  chipOn:      { backgroundColor: Colors.glassGold, borderColor: Colors.goldBorder },
-  chipText:    { fontSize: 12, color: Colors.textSecond, fontWeight: '700' },
-  chipTextOn:  { color: Colors.goldLight },
+  chipOn: { backgroundColor: Colors.glassGold, borderColor: Colors.goldBorder },
+  chipText: { fontSize: 12, color: Colors.textSecond, fontWeight: '700' },
+  chipTextOn: { color: Colors.goldLight },
   sortBtn: {
     paddingHorizontal: Spacing.md, paddingVertical: 7,
     borderRadius: Radius.full, borderWidth: 1.5,
@@ -285,16 +284,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg,
     borderBottomWidth: 1, borderBottomColor: Colors.divider,
   },
-  dropItemOn:  { backgroundColor: Colors.glassGold },
-  dropText:    { fontSize: FontSize.md, color: Colors.textPrimary, textAlign: 'right' },
-  dropTextOn:  { color: Colors.goldLight, fontWeight: '700' },
+  dropItemOn: { backgroundColor: Colors.glassGold },
+  dropText: { fontSize: FontSize.md, color: Colors.textPrimary, textAlign: 'right' },
+  dropTextOn: { color: Colors.goldLight, fontWeight: '700' },
 
-  grid:        { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: 100 },
-  gridRow:     { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: Spacing.md },
+  grid: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: 100 },
+  gridRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: Spacing.md },
 
-  center:      { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 80 },
-  centerText:  { color: Colors.textSecond, fontSize: FontSize.md, marginTop: Spacing.md, textAlign: 'center' },
-  emptyEmoji:  { fontSize: 48, marginBottom: Spacing.md },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 80 },
+  centerText: { color: Colors.textSecond, fontSize: FontSize.md, marginTop: Spacing.md, textAlign: 'center' },
+  emptyEmoji: { fontSize: 48, marginBottom: Spacing.md },
   actionBtn: {
     marginTop: Spacing.md, backgroundColor: Colors.gold,
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: Radius.full,

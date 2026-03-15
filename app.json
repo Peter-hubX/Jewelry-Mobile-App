@@ -15,22 +15,17 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.michiel.jewelry",
-      "buildNumber": "1",
-      "minimumOsVersion": "16.0"
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.michiel.jewelry",
       "versionCode": 1,
-      "compileSdkVersion": 35,
-      "targetSdkVersion": 35,
-      "minSdkVersion": 26,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "backgroundColor": "#1A1A2E",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+      }
     },
     "web": {
       "bundler": "metro",
@@ -49,7 +44,7 @@
       "eas": {
         "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
       },
-      "whatsappNumber": "201000000000"
+      "whatsappNumber": "20101073400"
     }
   }
 }

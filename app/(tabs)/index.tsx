@@ -1,5 +1,5 @@
-// app/(tabs)/index.tsx
-import React, { useEffect } from 'react';
+// app/(tabs)/index.tsx  — Enhanced Homepage
+import React, { useEffect, useRef } from 'react';
 import {
   ScrollView, View, Text, StyleSheet,
   Pressable, ActivityIndicator, Dimensions,
@@ -10,7 +10,8 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withTiming, withDelay, withSpring, Easing,
+  withTiming, withDelay, withSpring, withRepeat,
+  withSequence, Easing, interpolate,
 } from 'react-native-reanimated';
 
 import { useProducts } from '@/hooks/useProducts';
@@ -39,17 +40,32 @@ export default function HomeScreen() {
   const { data: products, isLoading } = useProducts();
   const { data: gold } = useGoldPrice();
 
-  // Staggered entrance for each section
+  // Entrance animations
   const heroOp = useSharedValue(0);
-  const heroY  = useSharedValue(36);
+  const heroY = useSharedValue(44);
   const sec1Op = useSharedValue(0);
   const sec2Op = useSharedValue(0);
+  const sec3Op = useSharedValue(0);
+
+  // Pulsing dot for live status
+  const pulseScale = useSharedValue(1);
 
   useEffect(() => {
-    heroOp.value = withDelay(80,  withTiming(1, { duration: 680, easing: Easing.out(Easing.cubic) }));
-    heroY.value  = withDelay(80,  withSpring(0, { damping: 16, stiffness: 130 }));
-    sec1Op.value = withDelay(400, withTiming(1, { duration: 500 }));
-    sec2Op.value = withDelay(620, withTiming(1, { duration: 500 }));
+    heroOp.value = withDelay(80, withTiming(1, { duration: 760, easing: Easing.out(Easing.cubic) }));
+    heroY.value = withDelay(80, withSpring(0, { damping: 14, stiffness: 110 }));
+    sec1Op.value = withDelay(440, withTiming(1, { duration: 520 }));
+    sec2Op.value = withDelay(620, withTiming(1, { duration: 520 }));
+    sec3Op.value = withDelay(800, withTiming(1, { duration: 520 }));
+
+    // Pulse animation for live dot
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.6, { duration: 800, easing: Easing.out(Easing.quad) }),
+        withTiming(1.0, { duration: 800, easing: Easing.in(Easing.quad) }),
+      ),
+      -1,
+      false,
+    );
   }, []);
 
   const heroStyle = useAnimatedStyle(() => ({
@@ -57,6 +73,10 @@ export default function HomeScreen() {
   }));
   const sec1Style = useAnimatedStyle(() => ({ opacity: sec1Op.value }));
   const sec2Style = useAnimatedStyle(() => ({ opacity: sec2Op.value }));
+  const sec3Style = useAnimatedStyle(() => ({ opacity: sec3Op.value }));
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }], opacity: interpolate(pulseScale.value, [1, 1.6], [0.8, 0]),
+  }));
 
   const featured = products?.slice(0, 10) ?? [];
 
@@ -66,14 +86,13 @@ export default function HomeScreen() {
 
       <ScrollView
         style={{ flex: 1, zIndex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ══════════════════════════════════════════════════════
-            HERO  — full-width editorial image + headline
+            HERO  — full-bleed editorial image + centered content
         ══════════════════════════════════════════════════════ */}
         <View style={[styles.heroOuter, { paddingTop: insets.top }]}>
-          {/* Background photo */}
           <Image
             source={{ uri: DEMO_IMAGES.hero }}
             style={styles.heroBg}
@@ -81,24 +100,34 @@ export default function HomeScreen() {
             transition={600}
           />
 
-          {/* Multi-stop overlay: keeps image visible at top, fades to bg at bottom */}
+          {/* Richer multi-stop gradient */}
           <LinearGradient
             colors={[
-              'rgba(11,11,18,0.18)',
-              'rgba(11,11,18,0.35)',
-              'rgba(11,11,18,0.70)',
+              'rgba(11,11,18,0.10)',
+              'rgba(11,11,18,0.20)',
+              'rgba(11,11,18,0.60)',
+              'rgba(11,11,18,0.88)',
               Colors.bg,
             ]}
-            locations={[0, 0.35, 0.72, 1]}
+            locations={[0, 0.25, 0.55, 0.80, 1]}
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Gold shimmer line along top edge */}
+          {/* Horizontal gold shimmer lines */}
           <LinearGradient
-            colors={['rgba(200,149,44,0.45)', 'transparent']}
+            colors={['transparent', 'rgba(200,149,44,0.55)', 'transparent']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.heroTopLine}
           />
+          <LinearGradient
+            colors={['transparent', 'rgba(200,149,44,0.20)', 'transparent']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.heroBottomLine}
+          />
+
+          {/* Corner accent ornaments */}
+          <View style={[styles.cornerAccent, styles.cornerTR]} />
+          <View style={[styles.cornerAccent, styles.cornerBL]} />
 
           <Animated.View style={[styles.heroContent, heroStyle]}>
             {/* Eyebrow */}
@@ -109,41 +138,68 @@ export default function HomeScreen() {
             </View>
 
             {/* Giant headline */}
-            <Text style={styles.heroHeadline}>ذهب{'\n'}خالص</Text>
+            <Text style={styles.heroHeadline}>
+              <Text style={styles.heroHeadlineGold}>ذهب</Text>
+              {'\n'}خالص
+            </Text>
 
             <Text style={styles.heroSub}>
               أجود المشغولات الذهبية{'\n'}بأسعار السوق لحظة بلحظة
             </Text>
 
-            {/* CTA button */}
-            <Pressable
-              style={styles.ctaWrap}
-              onPress={() => router.push('/(tabs)/catalog')}
-            >
-              <LinearGradient
-                colors={[Colors.goldLight, Colors.gold, Colors.goldDark]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={styles.ctaGrad}
+            {/* CTA row */}
+            <View style={styles.ctaRow}>
+              <Pressable
+                style={styles.ctaSecondary}
+                onPress={() => router.push('/(tabs)/gold-prices')}
               >
-                <Text style={styles.ctaText}>تصفح المجموعة</Text>
-                <Text style={styles.ctaArrow}>←</Text>
-              </LinearGradient>
-            </Pressable>
+                <Text style={styles.ctaSecondaryText}>أسعار اليوم</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.ctaWrap}
+                onPress={() => router.push('/(tabs)/catalog')}
+              >
+                <LinearGradient
+                  colors={[Colors.goldLight, Colors.gold, Colors.goldDark]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={styles.ctaGrad}
+                >
+                  <Text style={styles.ctaText}>تصفح المجموعة</Text>
+                  <Text style={styles.ctaArrow}>←</Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
+
+            {/* Quick stats row */}
+            <View style={styles.heroStats}>
+              <HeroStat value="+٥٠٠" label="قطعة" />
+              <View style={styles.heroStatDivider} />
+              <HeroStat value="٣" label="عيارات" />
+              <View style={styles.heroStatDivider} />
+              <HeroStat value="١٠٠٪" label="ذهب حقيقي" />
+            </View>
           </Animated.View>
         </View>
 
         {/* ══════════════════════════════════════════════════════
-            GOLD TICKER
+            GOLD TICKER — enhanced with pulse dot + better layout
         ══════════════════════════════════════════════════════ */}
         <Animated.View style={[styles.section, sec1Style]}>
           {gold ? (
             <GlassCard variant="gold" style={styles.ticker}>
-              {/* Header row */}
+              {/* Header */}
               <View style={styles.tickerHead}>
                 <View style={styles.tickerStatus}>
-                  <View style={[styles.statusDot, {
-                    backgroundColor: gold.isMarketOpen ? Colors.open : Colors.closed,
-                  }]} />
+                  {/* Pulsing ring behind dot */}
+                  <View style={styles.dotContainer}>
+                    <Animated.View style={[styles.pulseDot, pulseStyle, {
+                      backgroundColor: gold.isMarketOpen ? Colors.open : Colors.closed,
+                    }]} />
+                    <View style={[styles.statusDot, {
+                      backgroundColor: gold.isMarketOpen ? Colors.open : Colors.closed,
+                    }]} />
+                  </View>
                   <Text style={[styles.statusText, {
                     color: gold.isMarketOpen ? Colors.open : Colors.closed,
                   }]}>
@@ -153,19 +209,22 @@ export default function HomeScreen() {
                 <Text style={styles.tickerTitle}>أسعار الذهب اليوم</Text>
               </View>
 
-              {/* Prices */}
+              {/* Prices — bigger and cleaner */}
               <View style={styles.tickerPrices}>
-                <TickerPrice karat="24K" price={gold.karat24} bright />
+                <TickerPrice karat="24K" price={gold.karat24} bright label="ذهب خالص" />
                 <View style={styles.tickerDivider} />
-                <TickerPrice karat="21K" price={gold.karat21} />
+                <TickerPrice karat="21K" price={gold.karat21} label="الأكثر شيوعاً" />
                 <View style={styles.tickerDivider} />
-                <TickerPrice karat="18K" price={gold.karat18} />
+                <TickerPrice karat="18K" price={gold.karat18} label="عصري وأنيق" />
               </View>
 
-              {/* Link */}
-              <Pressable onPress={() => router.push('/(tabs)/gold-prices')}>
-                <Text style={styles.tickerLink}>عرض كل الأسعار ←</Text>
-              </Pressable>
+              {/* Footer */}
+              <View style={styles.tickerFooter}>
+                <Text style={styles.tickerNote}>السعر بالجنيه المصري / للجرام</Text>
+                <Pressable onPress={() => router.push('/(tabs)/gold-prices')}>
+                  <Text style={styles.tickerLink}>عرض كل الأسعار ←</Text>
+                </Pressable>
+              </View>
             </GlassCard>
           ) : (
             <GlassCard variant="gold" style={{ alignItems: 'center', padding: Spacing.lg }}>
@@ -175,7 +234,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* ══════════════════════════════════════════════════════
-            CATEGORY PILLS
+            CATEGORY PILLS — bigger, icon-forward
         ══════════════════════════════════════════════════════ */}
         <Animated.View style={[styles.section, sec1Style]}>
           <Text style={styles.sectionTitle}>تصفح حسب النوع</Text>
@@ -184,7 +243,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.pillsRow}
             style={{ transform: [{ scaleX: -1 }] }}
           >
-            {(['ring','necklace','bracelet','earrings','bar'] as ProductType[]).map((t, i) => (
+            {(['ring', 'necklace', 'bracelet', 'earrings', 'bar'] as ProductType[]).map((t, i) => (
               <View key={t} style={{ transform: [{ scaleX: -1 }] }}>
                 <CategoryPill type={t} staggerIndex={i} />
               </View>
@@ -193,7 +252,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* ══════════════════════════════════════════════════════
-            FEATURED PRODUCTS — horizontal scroll
+            FEATURED PRODUCTS — taller cards
         ══════════════════════════════════════════════════════ */}
         <Animated.View style={[styles.section, sec2Style]}>
           <View style={styles.sectionHeader}>
@@ -221,13 +280,13 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* ══════════════════════════════════════════════════════
-            KARAT TILES
+            KARAT TILES — differentiated visually
         ══════════════════════════════════════════════════════ */}
-        <Animated.View style={[styles.section, sec2Style]}>
+        <Animated.View style={[styles.section, sec3Style]}>
           <Text style={styles.sectionTitle}>تصفح حسب العيار</Text>
           <View style={styles.karatGrid}>
             {(['24K', '21K', '18K'] as const).map((k, i) => (
-              <KaratTile key={k} karat={k} index={i} />
+              <KaratTile key={k} karat={k} index={i} goldData={gold} />
             ))}
           </View>
         </Animated.View>
@@ -240,39 +299,63 @@ export default function HomeScreen() {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TickerPrice({ karat, price, bright }: { karat: string; price: number; bright?: boolean }) {
+function HeroStat({ value, label }: { value: string; label: string }) {
+  return (
+    <View style={hs.wrap}>
+      <Text style={hs.value}>{value}</Text>
+      <Text style={hs.label}>{label}</Text>
+    </View>
+  );
+}
+const hs = StyleSheet.create({
+  wrap: { alignItems: 'center' },
+  value: { color: Colors.goldBright, fontSize: FontSize.lg, fontWeight: '900' },
+  label: { color: 'rgba(255,255,255,0.55)', fontSize: 10, marginTop: 2 },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+function TickerPrice({ karat, price, bright, label }: {
+  karat: string; price: number; bright?: boolean; label?: string;
+}) {
   return (
     <View style={tp.wrap}>
       <Text style={[tp.price, bright && tp.bright]}>
         {price?.toLocaleString('en-US') ?? '---'}
       </Text>
-      <Text style={tp.label}>{karat} / جم</Text>
+      <Text style={tp.karat}>{karat}</Text>
+      {label && <Text style={tp.label}>{label}</Text>}
     </View>
   );
 }
 const tp = StyleSheet.create({
-  wrap:   { alignItems: 'center', flex: 1 },
-  price:  { color: Colors.goldMid, fontSize: FontSize.lg, fontWeight: '800' },
-  bright: { color: Colors.goldBright, fontSize: FontSize.xl },
-  label:  { color: Colors.textMuted, fontSize: 10, marginTop: 3 },
+  wrap: { alignItems: 'center', flex: 1, gap: 2 },
+  price: { color: Colors.goldMid, fontSize: FontSize.xl, fontWeight: '900' },
+  bright: { color: Colors.goldBright, fontSize: 26 },
+  karat: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
+  label: { color: Colors.textMuted, fontSize: 9, marginTop: 1 },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 function CategoryPill({ type, staggerIndex }: { type: ProductType; staggerIndex: number }) {
   const op = useSharedValue(0);
-  const x  = useSharedValue(-16);
+  const x = useSharedValue(-20);
+  const scale = useSharedValue(1);
+
   useEffect(() => {
-    const d = 500 + staggerIndex * 80;
-    op.value = withDelay(d, withTiming(1, { duration: 340 }));
-    x.value  = withDelay(d, withSpring(0, { damping: 16 }));
+    const d = 500 + staggerIndex * 90;
+    op.value = withDelay(d, withTiming(1, { duration: 360 }));
+    x.value = withDelay(d, withSpring(0, { damping: 16 }));
   }, []);
-  const style = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: x.value }] }));
+
+  const style = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: x.value }, { scale: scale.value }] }));
 
   return (
     <Animated.View style={style}>
       <Pressable
         style={cp.pill}
         onPress={() => router.push({ pathname: '/(tabs)/catalog', params: { type } })}
+        onPressIn={() => { scale.value = withSpring(0.93); }}
+        onPressOut={() => { scale.value = withSpring(1); }}
       >
         <Text style={cp.icon}>{PRODUCT_TYPE_ICONS[type]}</Text>
         <Text style={cp.label}>{PRODUCT_TYPE_LABELS[type]}</Text>
@@ -282,13 +365,14 @@ function CategoryPill({ type, staggerIndex }: { type: ProductType; staggerIndex:
 }
 const cp = StyleSheet.create({
   pill: {
-    flexDirection: 'row', alignItems: 'center', gap: 7,
-    paddingHorizontal: Spacing.md, paddingVertical: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: Spacing.md + 2, paddingVertical: 13,
     backgroundColor: Colors.glass, borderRadius: Radius.full,
     borderWidth: 1, borderColor: Colors.glassBorder,
+    minWidth: 100,
   },
-  icon:  { fontSize: 17 },
-  label: { fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: '600' },
+  icon: { fontSize: 20 },
+  label: { fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: '700' },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -300,20 +384,31 @@ function FeaturedCard({ product, index }: { product: Product; index: number }) {
     ?? FALLBACK[product.productType ?? 'ring']
     ?? DEMO_IMAGES.ring;
 
+  const isNew = index < 3;
+
   return (
     <Animated.View style={[fc.card, aStyle]}>
       <Pressable
         onPress={() => router.push(`/product/${product.id}`)}
-        onPressIn={() => { scale.value = withSpring(0.955); }}
+        onPressIn={() => { scale.value = withSpring(0.95); }}
         onPressOut={() => { scale.value = withSpring(1); }}
         style={{ flex: 1 }}
       >
         <Image source={{ uri: imgUrl }} style={fc.img} contentFit="cover" transition={400} />
+
         <LinearGradient
-          colors={['transparent', 'rgba(8,6,14,0.88)']}
-          locations={[0.38, 1]}
+          colors={['transparent', 'rgba(5,4,12,0.96)']}
+          locations={[0.35, 1]}
           style={fc.grad}
         />
+
+        {/* NEW badge */}
+        {isNew && (
+          <View style={fc.newBadge}>
+            <Text style={fc.newText}>جديد</Text>
+          </View>
+        )}
+
         <View style={fc.info}>
           <LinearGradient
             colors={[Colors.goldMid, Colors.goldDark]}
@@ -330,94 +425,205 @@ function FeaturedCard({ product, index }: { product: Product; index: number }) {
 }
 const fc = StyleSheet.create({
   card: {
-    width: 172, borderRadius: Radius.xl, overflow: 'hidden',
+    width: 190, borderRadius: Radius.xl, overflow: 'hidden',
     borderWidth: 1, borderColor: Colors.glassBorder, ...Shadow.card,
   },
-  img:   { width: 172, height: 226 },
-  grad:  { position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 },
-  info:  { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.sm },
+  img: { width: 190, height: 255 },
+  grad: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 140 },
+  info: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.sm + 2 },
+
+  newBadge: {
+    position: 'absolute', top: 10, left: 10,
+    backgroundColor: Colors.open,
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: Radius.full,
+  },
+  newText: { color: Colors.white, fontSize: 9, fontWeight: '800' },
+
   badge: {
-    alignSelf: 'flex-end', paddingHorizontal: 9, paddingVertical: 3,
-    borderRadius: Radius.full, marginBottom: 5,
+    alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: Radius.full, marginBottom: 6,
   },
-  badgeText: { color: Colors.white, fontSize: 10, fontWeight: '800' },
-  name:  {
-    color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700',
-    textAlign: 'right', marginBottom: 3,
+  badgeText: { color: Colors.white, fontSize: 10, fontWeight: '900' },
+  name: {
+    color: Colors.textPrimary, fontSize: FontSize.sm + 1, fontWeight: '700',
+    textAlign: 'right', marginBottom: 4,
   },
-  price: { color: Colors.goldBright, fontSize: FontSize.sm, fontWeight: '800', textAlign: 'right' },
+  price: { color: Colors.goldBright, fontSize: FontSize.md, fontWeight: '900', textAlign: 'right' },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 const KARAT_CFG = {
-  '24K': { colors: [Colors.goldLight, Colors.gold] as [string, string], sub: 'ذهب خالص' },
-  '21K': { colors: [Colors.gold, Colors.goldDark] as [string, string],  sub: 'الأكثر شيوعاً' },
-  '18K': { colors: [Colors.goldDark, '#3A2008'] as [string, string],    sub: 'عصري وأنيق' },
+  '24K': {
+    colors: ['#F7D060', '#C8952C', '#A36B10'] as [string, string, string],
+    sub: 'ذهب خالص',
+    icon: '✦',
+    description: 'أعلى نقاء',
+    accentOpacity: 0.25,
+  },
+  '21K': {
+    colors: ['#D4AF37', '#9B7319', '#6B4F0D'] as [string, string, string],
+    sub: 'الأكثر شيوعاً',
+    icon: '◆',
+    description: 'الأنسب للمجوهرات',
+    accentOpacity: 0.18,
+  },
+  '18K': {
+    colors: ['#8B6914', '#5C4209', '#3A2805'] as [string, string, string],
+    sub: 'عصري وأنيق',
+    icon: '●',
+    description: 'متين وعصري',
+    accentOpacity: 0.12,
+  },
 };
 
-function KaratTile({ karat, index }: { karat: '24K'|'21K'|'18K'; index: number }) {
+function KaratTile({ karat, index, goldData }: {
+  karat: '24K' | '21K' | '18K'; index: number; goldData: any;
+}) {
   const scale = useSharedValue(1);
   const s = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const { colors, sub } = KARAT_CFG[karat];
+  const { colors, sub, icon, description, accentOpacity } = KARAT_CFG[karat];
+
+  const price = goldData
+    ? karat === '24K' ? goldData.karat24
+      : karat === '21K' ? goldData.karat21
+        : goldData.karat18
+    : null;
 
   return (
     <Animated.View style={[kt.tile, s]}>
       <Pressable
         onPress={() => router.push({ pathname: '/(tabs)/catalog', params: { karat } })}
-        onPressIn={() => { scale.value = withSpring(0.94); }}
+        onPressIn={() => { scale.value = withSpring(0.93); }}
         onPressOut={() => { scale.value = withSpring(1.00); }}
         style={{ flex: 1 }}
       >
-        <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={kt.grad}>
+        <LinearGradient
+          colors={colors}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={kt.grad}
+        >
+          {/* Background pattern circle */}
+          <View style={[kt.bgCircle, { opacity: accentOpacity }]} />
+
+          {/* Icon */}
+          <Text style={kt.icon}>{icon}</Text>
+
+          {/* Karat label */}
           <Text style={kt.karat}>{karat}</Text>
           <Text style={kt.sub}>{sub}</Text>
+          <Text style={kt.desc}>{description}</Text>
+
+          {/* Live price */}
+          {price && (
+            <View style={kt.priceWrap}>
+              <Text style={kt.priceVal}>{price.toLocaleString('en-US')}</Text>
+              <Text style={kt.priceUnit}>ج.م/جم</Text>
+            </View>
+          )}
         </LinearGradient>
       </Pressable>
     </Animated.View>
   );
 }
 const kt = StyleSheet.create({
-  tile: { flex: 1, borderRadius: Radius.lg, overflow: 'hidden', ...Shadow.gold },
-  grad: { paddingVertical: Spacing.lg + 4, alignItems: 'center' },
-  karat: { color: Colors.white, fontSize: FontSize.xl, fontWeight: '900' },
-  sub:   { color: 'rgba(255,255,255,0.68)', fontSize: 10, marginTop: 4, textAlign: 'center' },
+  tile: { flex: 1, borderRadius: Radius.xl, overflow: 'hidden', ...Shadow.gold },
+  grad: {
+    paddingVertical: Spacing.xl, paddingHorizontal: Spacing.sm,
+    alignItems: 'center', minHeight: 170, justifyContent: 'center',
+    gap: 3,
+  },
+  bgCircle: {
+    position: 'absolute', width: 120, height: 120, borderRadius: 60,
+    backgroundColor: '#fff', top: -30, right: -30,
+  },
+  icon: { fontSize: 14, color: 'rgba(255,255,255,0.55)', marginBottom: 4 },
+  karat: { color: Colors.white, fontSize: FontSize.xxl, fontWeight: '900', letterSpacing: 1 },
+  sub: { color: 'rgba(255,255,255,0.80)', fontSize: 10, fontWeight: '700', marginTop: 2 },
+  desc: { color: 'rgba(255,255,255,0.50)', fontSize: 9, marginTop: 1 },
+  priceWrap: { marginTop: Spacing.sm, alignItems: 'center' },
+  priceVal: { color: 'rgba(255,255,255,0.90)', fontSize: FontSize.sm, fontWeight: '800' },
+  priceUnit: { color: 'rgba(255,255,255,0.50)', fontSize: 8 },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg },
 
-  // Hero
-  heroOuter:   { position: 'relative', minHeight: 480, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
-  heroBg:      { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  // ── Hero ──────────────────────────────────────────────────────────────────
+  heroOuter: {
+    position: 'relative', minHeight: 520,
+    paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl,
+  },
+  heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   heroTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2 },
-  heroContent: { alignItems: 'flex-end', paddingTop: 80 },
+  heroBottomLine: { position: 'absolute', bottom: Spacing.xxl, left: 0, right: 0, height: 1 },
+
+  cornerAccent: {
+    position: 'absolute', width: 32, height: 32,
+    borderColor: 'rgba(200,149,44,0.40)',
+  },
+  cornerTR: {
+    top: 16, right: 16,
+    borderTopWidth: 2, borderRightWidth: 2,
+    borderTopRightRadius: 4,
+  },
+  cornerBL: {
+    bottom: Spacing.xxl + 8, left: 16,
+    borderBottomWidth: 2, borderLeftWidth: 2,
+    borderBottomLeftRadius: 4,
+  },
+
+  heroContent: { alignItems: 'flex-end', paddingTop: 90 },
 
   eyebrow: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md,
+    flexDirection: 'row-reverse', alignItems: 'center',
+    gap: Spacing.sm, marginBottom: Spacing.md,
   },
   eyebrowLine: { flex: 1, height: 1, backgroundColor: Colors.goldBorder },
-  eyebrowText: { color: Colors.goldMid, fontSize: FontSize.xs, fontWeight: '700', letterSpacing: 3 },
+  eyebrowText: {
+    color: Colors.goldMid, fontSize: FontSize.xl,
+    fontWeight: '700', letterSpacing: 1,
+  },
 
   heroHeadline: {
-    color: Colors.white, fontSize: FontSize.hero, fontWeight: '900',
-    textAlign: 'right', lineHeight: 58, marginBottom: Spacing.md,
-    textShadowColor: 'rgba(0,0,0,0.55)',
-    textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12,
+    color: Colors.white, fontSize: FontSize.hero + 6, fontWeight: '900',
+    textAlign: 'right', lineHeight: 64, marginBottom: Spacing.md,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 16,
   },
+  heroHeadlineGold: { color: Colors.goldBright },
+
   heroSub: {
     color: 'rgba(255,255,255,0.65)', fontSize: FontSize.sm,
-    textAlign: 'right', lineHeight: 23, marginBottom: Spacing.xl,
+    textAlign: 'right', lineHeight: 24, marginBottom: Spacing.xl,
+  },
+
+  ctaRow: {
+    flexDirection: 'row-reverse', alignItems: 'center',
+    gap: Spacing.md, marginBottom: Spacing.xl,
   },
   ctaWrap: { borderRadius: Radius.full, overflow: 'hidden', ...Shadow.gold },
   ctaGrad: {
-    paddingVertical: 14, paddingHorizontal: Spacing.xl,
+    paddingVertical: 15, paddingHorizontal: Spacing.xl,
     flexDirection: 'row-reverse', alignItems: 'center', gap: 8,
   },
-  ctaText:  { color: Colors.bg, fontWeight: '900', fontSize: FontSize.md, letterSpacing: 0.4 },
+  ctaText: { color: Colors.bg, fontWeight: '900', fontSize: FontSize.md, letterSpacing: 0.4 },
   ctaArrow: { color: Colors.bg, fontWeight: '900', fontSize: FontSize.lg },
+  ctaSecondary: {
+    paddingVertical: 14, paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.glassBorder,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  ctaSecondaryText: { color: Colors.textPrimary, fontWeight: '700', fontSize: FontSize.sm },
 
-  // Sections
+  heroStats: {
+    flexDirection: 'row-reverse', alignItems: 'center',
+    gap: Spacing.lg, paddingTop: Spacing.sm,
+  },
+  heroStatDivider: { width: 1, height: 28, backgroundColor: 'rgba(200,149,44,0.25)' },
+
+  // ── Sections ──────────────────────────────────────────────────────────────
   section: { paddingHorizontal: Spacing.lg, marginTop: Spacing.xl },
   sectionHeader: {
     flexDirection: 'row-reverse', justifyContent: 'space-between',
@@ -429,25 +635,31 @@ const styles = StyleSheet.create({
   },
   sectionLink: { fontSize: FontSize.sm, color: Colors.goldMid, fontWeight: '600' },
 
-  // Ticker
-  ticker:       { gap: Spacing.md },
+  // ── Ticker ────────────────────────────────────────────────────────────────
+  ticker: { gap: Spacing.md },
   tickerHead: {
     flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center',
   },
-  tickerTitle:  { fontSize: FontSize.md, fontWeight: '800', color: Colors.textPrimary },
-  tickerStatus: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5 },
-  statusDot:    { width: 7, height: 7, borderRadius: 4 },
-  statusText:   { fontSize: 11, fontWeight: '700' },
-  tickerPrices: { flexDirection: 'row-reverse', alignItems: 'center' },
-  tickerDivider:{ width: 1, height: 32, backgroundColor: Colors.goldBorder },
-  tickerLink:   { color: Colors.goldMid, fontSize: FontSize.sm, fontWeight: '600', textAlign: 'left' },
+  tickerTitle: { fontSize: FontSize.md, fontWeight: '800', color: Colors.textPrimary },
+  tickerStatus: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
+  dotContainer: { width: 14, height: 14, justifyContent: 'center', alignItems: 'center' },
+  pulseDot: { position: 'absolute', width: 14, height: 14, borderRadius: 7 },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  statusText: { fontSize: 11, fontWeight: '700' },
+  tickerPrices: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: Spacing.sm },
+  tickerDivider: { width: 1, height: 44, backgroundColor: Colors.goldBorder },
+  tickerFooter: {
+    flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center',
+  },
+  tickerLink: { color: Colors.goldMid, fontSize: FontSize.sm, fontWeight: '600' },
+  tickerNote: { color: Colors.textMuted, fontSize: 10 },
 
-  // Pills
+  // ── Pills ─────────────────────────────────────────────────────────────────
   pillsRow: { gap: Spacing.sm, paddingVertical: 4 },
 
-  // Featured
+  // ── Featured ──────────────────────────────────────────────────────────────
   featRow: { gap: Spacing.md, paddingBottom: 4 },
 
-  // Karat grid
+  // ── Karat grid ────────────────────────────────────────────────────────────
   karatGrid: { flexDirection: 'row-reverse', gap: Spacing.sm },
 });
