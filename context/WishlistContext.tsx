@@ -5,9 +5,9 @@ import type { Product } from '@/types';
 
 type WishlistCtx = {
   wishlist: Product[];
-  isWishlisted: (id: number) => boolean;
+  isWishlisted: (id: string) => boolean;
   toggle: (product: Product) => void;
-  remove: (id: number) => void;
+  remove: (id: string) => void;
   clear: () => void;
   loaded: boolean;
 };

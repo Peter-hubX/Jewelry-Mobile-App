@@ -26,7 +26,7 @@ function WishlistHeaderButton() {
         style={hdr.btn}
         hitSlop={10}
       >
-        <StarIcon filled={count > 0} />
+        <HeartIcon filled={count > 0} />
         {count > 0 && (
           <View style={hdr.badge}>
             <Text style={hdr.badgeText}>{count > 9 ? '9+' : count}</Text>
@@ -37,10 +37,10 @@ function WishlistHeaderButton() {
   );
 }
 
-function StarIcon({ filled }: { filled: boolean }) {
+function HeartIcon({ filled }: { filled: boolean }) {
   return (
-    <Text style={{ fontSize: 22, color: filled ? Colors.gold : 'rgba(255,255,255,0.90)' }}>
-      {filled ? '⭐' : '☆'}
+    <Text style={{ fontSize: 22, color: filled ? '#FF4B4B' : 'rgba(255,255,255,0.90)' }}>
+      {filled ? '❤️' : '🤍'}
     </Text>
   );
 }
@@ -134,6 +134,15 @@ export default function TabLayout() {
           title: 'أسعار الذهب',
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon emoji="📈" color={color} size={size} active={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="store"
+        options={{
+          title: 'فرعنا',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon emoji="📍" color={color} size={size} active={focused} />
           ),
         }}
       />

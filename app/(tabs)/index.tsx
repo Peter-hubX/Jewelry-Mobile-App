@@ -41,8 +41,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { data: products, isLoading, refetch: refetchProducts } = useProducts();
   const { data: gold, refetch: refetchGold } = useGoldPrice();
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const onRefresh = React.useCallback(async () => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
     hapticLight();
     setIsRefreshing(true);
     await Promise.all([refetchProducts(), refetchGold()]);
@@ -55,10 +56,10 @@ export default function HomeScreen() {
   const sec1Op = useSharedValue(0);
   const sec2Op = useSharedValue(0);
   const sec3Op = useSharedValue(0);
+  const sec4Op = useSharedValue(0);
 
   // Pulsing dot for live status
   const pulseScale = useSharedValue(1);
-
 
   useEffect(() => {
     heroOp.value = withDelay(80, withTiming(1, { duration: 760, easing: Easing.out(Easing.cubic) }));
@@ -66,6 +67,7 @@ export default function HomeScreen() {
     sec1Op.value = withDelay(440, withTiming(1, { duration: 520 }));
     sec2Op.value = withDelay(620, withTiming(1, { duration: 520 }));
     sec3Op.value = withDelay(800, withTiming(1, { duration: 520 }));
+    sec4Op.value = withDelay(980, withTiming(1, { duration: 520 }));
 
     // Pulse animation for live dot
     pulseScale.value = withRepeat(
@@ -84,8 +86,10 @@ export default function HomeScreen() {
   const sec1Style = useAnimatedStyle(() => ({ opacity: sec1Op.value }));
   const sec2Style = useAnimatedStyle(() => ({ opacity: sec2Op.value }));
   const sec3Style = useAnimatedStyle(() => ({ opacity: sec3Op.value }));
+  const sec4Style = useAnimatedStyle(() => ({ opacity: sec4Op.value }));
   const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }], opacity: interpolate(pulseScale.value, [1, 1.6], [0.8, 0]),
+    transform: [{ scale: pulseScale.value }],
+    opacity: interpolate(pulseScale.value, [1, 1.6], [0.8, 0]),
   }));
 
   const featured = products?.slice(0, 10) ?? [];
@@ -118,7 +122,6 @@ export default function HomeScreen() {
             transition={600}
           />
 
-          {/* Richer multi-stop gradient */}
           <LinearGradient
             colors={[
               'rgba(11,11,18,0.10)',
@@ -131,7 +134,6 @@ export default function HomeScreen() {
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Horizontal gold shimmer lines */}
           <LinearGradient
             colors={['transparent', 'rgba(200,149,44,0.55)', 'transparent']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -143,19 +145,16 @@ export default function HomeScreen() {
             style={styles.heroBottomLine}
           />
 
-          {/* Corner accent ornaments */}
           <View style={[styles.cornerAccent, styles.cornerTR]} />
           <View style={[styles.cornerAccent, styles.cornerBL]} />
 
           <Animated.View style={[styles.heroContent, heroStyle]}>
-            {/* Eyebrow */}
             <View style={styles.eyebrow}>
               <View style={styles.eyebrowLine} />
               <Text style={styles.eyebrowText}>مجوهرات ميشيل</Text>
               <View style={styles.eyebrowLine} />
             </View>
 
-            {/* Giant headline */}
             <Text style={styles.heroHeadline}>
               <Text style={styles.heroHeadlineGold}>ذهب</Text>
               {'\n'}خالص
@@ -165,7 +164,6 @@ export default function HomeScreen() {
               أجود المشغولات الذهبية{'\n'}بأسعار السوق لحظة بلحظة
             </Text>
 
-            {/* CTA row */}
             <View style={styles.ctaRow}>
               <Pressable
                 style={styles.ctaSecondary}
@@ -189,7 +187,6 @@ export default function HomeScreen() {
               </Pressable>
             </View>
 
-            {/* Quick stats row */}
             <View style={styles.heroStats}>
               <HeroStat value="+٥٠٠" label="قطعة" />
               <View style={styles.heroStatDivider} />
@@ -201,15 +198,13 @@ export default function HomeScreen() {
         </View>
 
         {/* ══════════════════════════════════════════════════════
-            GOLD TICKER — enhanced with pulse dot + better layout
+            GOLD TICKER
         ══════════════════════════════════════════════════════ */}
         <Animated.View style={[styles.section, sec1Style]}>
           {gold ? (
             <GlassCard variant="gold" style={styles.ticker}>
-              {/* Header */}
               <View style={styles.tickerHead}>
                 <View style={styles.tickerStatus}>
-                  {/* Pulsing ring behind dot */}
                   <View style={styles.dotContainer}>
                     <Animated.View style={[styles.pulseDot, pulseStyle, {
                       backgroundColor: gold.isMarketOpen ? Colors.open : Colors.closed,
@@ -227,16 +222,14 @@ export default function HomeScreen() {
                 <Text style={styles.tickerTitle}>أسعار الذهب اليوم</Text>
               </View>
 
-              {/* Prices — bigger and cleaner */}
               <View style={styles.tickerPrices}>
-                <TickerPrice karat="24K" price={gold.karat24} bright label="ذهب خالص" />
+                <TickerPrice karat="24K" price={gold.karat24} prev={gold.prev24} bright label="ذهب خالص" />
                 <View style={styles.tickerDivider} />
-                <TickerPrice karat="21K" price={gold.karat21} label="الأكثر شيوعاً" />
+                <TickerPrice karat="21K" price={gold.karat21} prev={gold.prev21} label="الأكثر شيوعاً" />
                 <View style={styles.tickerDivider} />
-                <TickerPrice karat="18K" price={gold.karat18} label="عصري وأنيق" />
+                <TickerPrice karat="18K" price={gold.karat18} prev={gold.prev18} label="عصري وأنيق" />
               </View>
 
-              {/* Footer */}
               <View style={styles.tickerFooter}>
                 <Text style={styles.tickerNote}>السعر بالجنيه المصري / للجرام</Text>
                 <Pressable onPress={() => router.push('/(tabs)/gold-prices')}>
@@ -252,7 +245,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* ══════════════════════════════════════════════════════
-            CATEGORY PILLS — bigger, icon-forward
+            CATEGORY PILLS
         ══════════════════════════════════════════════════════ */}
         <Animated.View style={[styles.section, sec1Style]}>
           <Text style={styles.sectionTitle}>تصفح حسب النوع</Text>
@@ -270,7 +263,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* ══════════════════════════════════════════════════════
-            FEATURED PRODUCTS — taller cards
+            FEATURED PRODUCTS
         ══════════════════════════════════════════════════════ */}
         <Animated.View style={[styles.section, sec2Style]}>
           <View style={styles.sectionHeader}>
@@ -285,7 +278,7 @@ export default function HomeScreen() {
               horizontal showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.featRow}
             >
-              {[0,1,2,3].map(i => <SkeletonCard key={i} index={i} />)}
+              {[0, 1, 2, 3].map(i => <SkeletonCard key={i} index={i} />)}
             </ScrollView>
           ) : (
             <ScrollView
@@ -303,7 +296,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* ══════════════════════════════════════════════════════
-            KARAT TILES — differentiated visually
+            KARAT TILES
         ══════════════════════════════════════════════════════ */}
         <Animated.View style={[styles.section, sec3Style]}>
           <Text style={styles.sectionTitle}>تصفح حسب العيار</Text>
@@ -312,6 +305,33 @@ export default function HomeScreen() {
               <KaratTile key={k} karat={k} index={i} goldData={gold} />
             ))}
           </View>
+        </Animated.View>
+
+        {/* ══════════════════════════════════════════════════════
+            STORE SECTION
+        ══════════════════════════════════════════════════════ */}
+        <Animated.View style={[styles.section, sec4Style]}>
+          <Text style={styles.sectionTitle}>فرعنا</Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/store')}
+            style={styles.storeCard}
+          >
+            <LinearGradient
+              colors={['rgba(200,149,44,0.12)', 'rgba(200,149,44,0.04)']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={styles.storeGrad}
+            >
+              <View style={styles.storeLeft}>
+                <Text style={styles.storePin}>📍</Text>
+              </View>
+              <View style={styles.storeInfo}>
+                <Text style={styles.storeName}>مجوهرات ميشيل</Text>
+                <Text style={styles.storeAddress}>القاهرة، مصر</Text>
+                <Text style={styles.storeHours}>السبت — الخميس: 10ص — 10م</Text>
+              </View>
+              <Text style={styles.storeArrow}>←</Text>
+            </LinearGradient>
+          </Pressable>
         </Animated.View>
       </ScrollView>
     </View>
@@ -337,11 +357,31 @@ const hs = StyleSheet.create({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-function TickerPrice({ karat, price, bright, label }: {
-  karat: string; price: number; bright?: boolean; label?: string;
+function TickerPrice({ karat, price, prev, bright, label }: {
+  karat: string; price: number; prev?: number | null; bright?: boolean; label?: string;
 }) {
+  const diff = prev != null && prev !== 0 ? price - prev : null;
+  const pct  = diff != null && prev ? ((diff / prev) * 100).toFixed(2) : null;
+  const up   = diff != null && diff > 0;
+  const down = diff != null && diff < 0;
+
   return (
     <View style={tp.wrap}>
+      {/* Change indicator row */}
+      {pct != null && diff !== 0 ? (
+        <View style={tp.changeRow}>
+          <Text style={[tp.arrow, up ? tp.arrowUp : tp.arrowDown]}>
+            {up ? '▲' : '▼'}
+          </Text>
+          <Text style={[tp.pct, up ? tp.pctUp : tp.pctDown]}>
+            {Math.abs(Number(pct))}٪
+          </Text>
+        </View>
+      ) : (
+        <View style={tp.changeRow}>
+          <Text style={tp.stable}>—</Text>
+        </View>
+      )}
       <Text style={[tp.price, bright && tp.bright]}>
         {price?.toLocaleString('en-US') ?? '---'}
       </Text>
@@ -351,11 +391,19 @@ function TickerPrice({ karat, price, bright, label }: {
   );
 }
 const tp = StyleSheet.create({
-  wrap: { alignItems: 'center', flex: 1, gap: 2 },
-  price: { color: Colors.goldMid, fontSize: FontSize.xl, fontWeight: '900' },
-  bright: { color: Colors.goldBright, fontSize: 26 },
-  karat: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
-  label: { color: Colors.textMuted, fontSize: 9, marginTop: 1 },
+  wrap:      { alignItems: 'center', flex: 1, gap: 2 },
+  changeRow: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 16 },
+  arrow:     { fontSize: 9, fontWeight: '900' },
+  arrowUp:   { color: Colors.open },
+  arrowDown: { color: Colors.closed },
+  pct:       { fontSize: 9, fontWeight: '800' },
+  pctUp:     { color: Colors.open },
+  pctDown:   { color: Colors.closed },
+  stable:    { fontSize: 9, color: Colors.textMuted },
+  price:     { color: Colors.goldMid, fontSize: FontSize.xl, fontWeight: '900' },
+  bright:    { color: Colors.goldBright, fontSize: 26 },
+  karat:     { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
+  label:     { color: Colors.textMuted, fontSize: 9, marginTop: 1 },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -685,4 +733,14 @@ const styles = StyleSheet.create({
 
   // ── Karat grid ────────────────────────────────────────────────────────────
   karatGrid: { flexDirection: 'row-reverse', gap: Spacing.sm },
+
+  storeCard:    { borderRadius: Radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: Colors.goldBorder, ...Shadow.gold },
+  storeGrad:    { flexDirection: 'row-reverse', alignItems: 'center', padding: Spacing.lg, gap: Spacing.md },
+  storeLeft:    { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(200,149,44,0.15)', alignItems: 'center', justifyContent: 'center' },
+  storePin:     { fontSize: 24 },
+  storeInfo:    { flex: 1, alignItems: 'flex-end', gap: 3 },
+  storeName:    { fontSize: FontSize.md, fontWeight: '800', color: Colors.textPrimary },
+  storeAddress: { fontSize: FontSize.sm, color: Colors.textSecond },
+  storeHours:   { fontSize: FontSize.xs, color: Colors.textMuted },
+  storeArrow:   { color: Colors.goldMid, fontSize: FontSize.lg, fontWeight: '700' },
 });

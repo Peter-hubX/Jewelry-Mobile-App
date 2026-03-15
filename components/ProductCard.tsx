@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSpring,
-  withDelay, withSequence, Easing,
+  withDelay, withSequence, Easing, cancelAnimation,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
 
@@ -55,9 +55,10 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
 
   function handleStar() {
     hapticSuccess();
+    cancelAnimation(starScale);
     starScale.value = withSequence(
-      withSpring(1.5, { damping: 5, stiffness: 300 }),
-      withSpring(1.0, { damping: 10 }),
+      withTiming(1.4, { duration: 100, easing: Easing.out(Easing.quad) }),
+      withSpring(1.0, { damping: 15, stiffness: 200 })
     );
     toggle(product);
   }
@@ -91,7 +92,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             style={styles.starBtn}
           >
             <Text style={[styles.starIcon, active && styles.starIconOn]}>
-              {active ? '⭐' : '☆'}
+              {active ? '❤️' : '🤍'}
             </Text>
           </Pressable>
         </Animated.View>
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   starIcon:   { fontSize: 14, color: 'rgba(255,255,255,0.92)' },
-  starIconOn: { color: Colors.goldBright },
+  starIconOn: { color: '#FF4B4B' },
 
   typePill: {
     position: 'absolute', bottom: Spacing.sm, right: Spacing.sm,

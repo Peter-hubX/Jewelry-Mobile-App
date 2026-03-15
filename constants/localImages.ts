@@ -31,7 +31,7 @@ import type { ProductType } from '@/types';
 //   42:   require('../assets/product-images/by-id/42.jpg'),
 //   1023: require('../assets/product-images/by-id/1023.png'),
 
-export const LOCAL_IMAGES_BY_ID: Record<number, any> = {
+export const LOCAL_IMAGES_BY_ID: Record<string, any> = {
   // ← paste your entries here, e.g.:
   // 1: require('../assets/product-images/by-id/1.jpg'),
 };
@@ -59,7 +59,7 @@ export const LOCAL_IMAGES_BY_TYPE: Partial<Record<ProductType, any>> = {
 //   <Image source={localSrc ?? { uri: apiUrl ?? DEMO_IMAGES.ring }} />
 // ─────────────────────────────────────────────────────────────────────────────
 export function resolveLocalImage(
-  productId: number,
+  productId: string,
   productType?: ProductType | string,
 ): any | null {
   // 1. Exact product ID match

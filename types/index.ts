@@ -3,7 +3,7 @@ export type Karat = '24K' | '21K' | '18K';
 export type ProductType = 'ring' | 'necklace' | 'bracelet' | 'earrings' | 'bar';
 
 export type Product = {
-  id: number;
+  id: string;
   name: string;
   nameAr: string;
   description?: string;

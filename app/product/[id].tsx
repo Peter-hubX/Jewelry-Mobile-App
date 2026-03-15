@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  ActivityIndicator, Pressable, Dimensions, Linking, Alert,
+  ActivityIndicator, Pressable, Dimensions, Linking, Alert, Share,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle, withDelay,
   withTiming, withSpring, withSequence, Easing,
+  cancelAnimation,
 } from 'react-native-reanimated';
 
 import { useGoldPrice } from '@/hooks/useGoldPrice';
@@ -74,9 +75,10 @@ export default function ProductDetailScreen() {
   function handleStar() {
     if (!product) return;
     hapticSuccess();
+    cancelAnimation(starScale);
     starScale.value = withSequence(
-      withSpring(1.5, { damping: 5, stiffness: 300 }),
-      withSpring(1.0, { damping: 10 }),
+      withTiming(1.4, { duration: 100, easing: Easing.out(Easing.quad) }),
+      withSpring(1.0, { damping: 15, stiffness: 200 })
     );
     toggle(product);
   }
@@ -112,6 +114,21 @@ export default function ProductDetailScreen() {
     }
   }
 
+  async function handleShare() {
+    if (!product) return;
+    hapticLight();
+    try {
+      await Share.share({
+        message:
+          `✨ ${product.nameAr}\n` +
+          `العيار: ${product.karat} | الوزن: ${product.weight} جم\n` +
+          `السعر التقريبي: ${product.calculatedPrice.toLocaleString('en-US')} EGP\n\n` +
+          `مجوهرات ميشيل — ذهب خالص بأسعار السوق لحظة بلحظة`,
+      });
+    } catch {}
+  }
+
+
   return (
     <View style={styles.root}>
       <AmbientBackground />
@@ -119,7 +136,14 @@ export default function ProductDetailScreen() {
       {/* Back button */}
       <Pressable
         style={[styles.backBtn, { top: insets.top || Spacing.lg, right: Spacing.lg }]}
-        onPress={() => { hapticLight(); router.back(); }}
+        onPress={() => {
+          hapticLight();
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)');
+          }
+        }}
         hitSlop={14}
       >
         <Text style={styles.backArrow}>←</Text>
@@ -134,7 +158,7 @@ export default function ProductDetailScreen() {
         ]}>
           <Pressable onPress={handleStar} hitSlop={14} style={styles.starBtn}>
             <Text style={[styles.starIcon, active && styles.starIconOn]}>
-              {active ? '⭐' : '☆'}
+              {active ? '❤️' : '🤍'}
             </Text>
           </Pressable>
         </Animated.View>
@@ -150,7 +174,16 @@ export default function ProductDetailScreen() {
         <View style={styles.center}>
           <Text style={styles.errEmoji}>⚠️</Text>
           <Text style={styles.errText}>تعذر تحميل المنتج</Text>
-          <Pressable style={styles.actionBtn} onPress={() => router.back()}>
+          <Pressable
+            style={styles.actionBtn}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
+            }}
+          >
             <Text style={styles.actionBtnText}>العودة</Text>
           </Pressable>
         </View>
@@ -239,13 +272,19 @@ export default function ProductDetailScreen() {
                 </Pressable>
               </Animated.View>
 
+              {/* Share */}
+              <Pressable onPress={handleShare} style={styles.shareBtn}>
+                <Text style={styles.shareIcon}>📤</Text>
+                <Text style={styles.shareText}>مشاركة</Text>
+              </Pressable>
+
               {/* Add to favorites */}
               <Animated.View style={starStyle}>
                 <Pressable onPress={handleStar} style={[
                   styles.favBtn,
                   active && styles.favBtnOn,
                 ]}>
-                  <Text style={styles.favStar}>{active ? '⭐' : '☆'}</Text>
+                  <Text style={styles.favStar}>{active ? '❤️' : '🤍'}</Text>
                   <Text style={[styles.favText, active && styles.favTextOn]}>
                     {active ? 'في المفضلة' : 'أضف للمفضلة'}
                   </Text>
@@ -340,8 +379,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.60)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.30)',
     justifyContent: 'center', alignItems: 'center',
   },
-  starIcon:   { fontSize: 20, color: 'rgba(255,255,255,0.95)' },
-  starIconOn: { color: Colors.goldBright },
+  starIcon:   { fontSize: 20, color: Colors.white },
+  starIconOn: { color: '#FF4B4B' },
 
   imgWrap:    { position: 'relative' },
   img:        { width: W, height: IMG_H },
@@ -391,8 +430,18 @@ const styles = StyleSheet.create({
   },
   favBtnOn:   { backgroundColor: Colors.glassGold, borderColor: Colors.goldBorder },
   favStar:    { fontSize: 18 },
-  favText:    { fontSize: 10, color: Colors.textMuted, fontWeight: '700' },
+  favText:    { fontSize: 10, color: Colors.textPrimary, fontWeight: '700' },
   favTextOn:  { color: Colors.goldLight },
+
+  shareBtn: {
+    flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 14, paddingHorizontal: Spacing.md,
+    borderRadius: Radius.full, borderWidth: 1.5,
+    borderColor: Colors.glassBorder, backgroundColor: Colors.glass,
+    gap: 2, minWidth: 72,
+  },
+  shareIcon: { fontSize: 18, color: Colors.textPrimary },
+  shareText: { fontSize: 10, color: Colors.textPrimary, fontWeight: '700' },
 
   sectionTitle: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary, textAlign: 'right', marginBottom: Spacing.md },
   specsGrid:    { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.lg },

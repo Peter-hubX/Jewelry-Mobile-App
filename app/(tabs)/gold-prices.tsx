@@ -80,7 +80,17 @@ export default function GoldPricesScreen() {
             />
 
             {/* Back button */}
-            <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={14}>
+            <Pressable
+              style={styles.backBtn}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)');
+                }
+              }}
+              hitSlop={14}
+            >
               <Text style={styles.backArrow}>←</Text>
             </Pressable>
 
@@ -127,18 +137,22 @@ export default function GoldPricesScreen() {
         {/* Cards */}
         {data && !isLoading && !isError && (
           <View style={styles.cards}>
-            {KARATS.map((cfg, i) => (
-              <KaratCard
-                key={cfg.key}
-                label={cfg.label}
-                sub={cfg.sub}
-                price={data[cfg.key]}
-                colors={cfg.colors}
-                accent={cfg.accent}
-                isOpen={data.isMarketOpen}
-                index={i}
-              />
-            ))}
+            {KARATS.map((cfg, i) => {
+              const prevKey = cfg.key === 'karat24' ? 'prev24' : cfg.key === 'karat21' ? 'prev21' : 'prev18';
+              return (
+                <KaratCard
+                  key={cfg.key}
+                  label={cfg.label}
+                  sub={cfg.sub}
+                  price={data[cfg.key]}
+                  prev={(data as any)[prevKey] ?? null}
+                  colors={cfg.colors}
+                  accent={cfg.accent}
+                  isOpen={data.isMarketOpen}
+                  index={i}
+                />
+              );
+            })}
 
             {/* Stats row */}
             <GlassCard noPadding style={styles.statsRow}>
@@ -160,11 +174,15 @@ export default function GoldPricesScreen() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-function KaratCard({ label, sub, price, colors, accent, isOpen, index }: {
-  label: string; sub: string; price: number;
+function KaratCard({ label, sub, price, prev, colors, accent, isOpen, index }: {
+  label: string; sub: string; price: number; prev?: number | null;
   colors: [string, string]; accent: string;
   isOpen: boolean; index: number;
 }) {
+  const diff = prev != null && prev !== 0 ? price - prev : null;
+  const pct  = diff != null && prev ? ((diff / prev) * 100).toFixed(2) : null;
+  const up   = diff != null && diff > 0;
+  const down = diff != null && diff < 0;
   const op = useSharedValue(0);
   const y  = useSharedValue(32);
   useEffect(() => {
@@ -193,9 +211,18 @@ function KaratCard({ label, sub, price, colors, accent, isOpen, index }: {
             <Text style={styles.karatSub}>{sub}</Text>
           </View>
           <View style={styles.karatLeft}>
-            <Text style={[styles.karatPrice, { color: accent }]}>
-              {price?.toLocaleString('en-US') ?? '---'}
-            </Text>
+            <View style={styles.priceRow}>
+              <Text style={[styles.karatPrice, { color: accent }]}>
+                {price?.toLocaleString('en-US') ?? '---'}
+              </Text>
+              {pct != null && diff !== 0 && (
+                <View style={[styles.changePill, up ? styles.changePillUp : styles.changePillDown]}>
+                  <Text style={[styles.changeText, up ? styles.changeUp : styles.changeDown]}>
+                    {up ? '▲' : '▼'} {Math.abs(Number(pct))}٪
+                  </Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.karatUnit}>جنيه / جم</Text>
           </View>
         </View>
@@ -257,7 +284,14 @@ const styles = StyleSheet.create({
   karatLabel:  { fontSize: FontSize.xl, fontWeight: '900', color: Colors.white, marginBottom: 5 },
   karatSub:    { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.52)', textAlign: 'right', maxWidth: 160 },
   karatLeft:   { alignItems: 'flex-start' },
+  priceRow:    { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
   karatPrice:  { fontSize: 32, fontWeight: '900', letterSpacing: -0.6 },
+  changePill:  { paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radius.sm, marginLeft: 8 },
+  changePillUp:   { backgroundColor: 'rgba(74,222,128,0.15)' },
+  changePillDown: { backgroundColor: 'rgba(248,113,113,0.15)' },
+  changeText:  { fontSize: 12, fontWeight: '800' },
+  changeUp:    { color: Colors.open },
+  changeDown:  { color: Colors.closed },
   karatUnit:   { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.50)', marginTop: 3 },
   karatFooter: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
