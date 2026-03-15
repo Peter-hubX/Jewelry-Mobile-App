@@ -1,8 +1,9 @@
 // app/(tabs)/index.tsx  — Enhanced Homepage
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ScrollView, View, Text, StyleSheet,
   Pressable, ActivityIndicator, Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -37,8 +38,16 @@ const FALLBACK: Record<string, string> = {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { data: products, isLoading } = useProducts();
-  const { data: gold } = useGoldPrice();
+  const { data: products, isLoading, refetch: refetchProducts } = useProducts();
+  const { data: gold, refetch: refetchGold } = useGoldPrice();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    // hapticLight(); // Assuming you have expo-haptics
+    setIsRefreshing(true);
+    await Promise.all([refetchProducts(), refetchGold()]);
+    setIsRefreshing(false);
+  }, [refetchProducts, refetchGold]);
 
   // Entrance animations
   const heroOp = useSharedValue(0);
@@ -49,6 +58,7 @@ export default function HomeScreen() {
 
   // Pulsing dot for live status
   const pulseScale = useSharedValue(1);
+
 
   useEffect(() => {
     heroOp.value = withDelay(80, withTiming(1, { duration: 760, easing: Easing.out(Easing.cubic) }));
@@ -88,6 +98,14 @@ export default function HomeScreen() {
         style={{ flex: 1, zIndex: 1 }}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.gold}
+            colors={[Colors.gold]}
+          />
+        }
       >
         {/* ══════════════════════════════════════════════════════
             HERO  — full-bleed editorial image + centered content
