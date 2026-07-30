@@ -7,7 +7,7 @@
 /** WhatsApp business number — international format WITHOUT leading +
  *  Example: Egypt +20 100 123 4567 → '201001234567'
  */
-export const WHATSAPP_NUMBER = '201010713400'; // ← REPLACE with your number
+export const WHATSAPP_NUMBER = '201019238222'; // ← REPLACE with your number
 
 /**
  * Build a WhatsApp deep-link with a pre-filled Arabic message.

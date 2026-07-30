@@ -8,9 +8,15 @@ export const BASE_URL: string =
   'http://localhost:3000';
 
 async function json<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const res = await fetch(input as RequestInfo, init);
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-  return res.json() as Promise<T>;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000); // 10s timeout
+  try {
+    const res = await fetch(input as RequestInfo, { ...init, signal: controller.signal });
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    return res.json() as Promise<T>;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function normaliseProduct(raw: any): Product {
